@@ -415,6 +415,7 @@ var requirejs, require, define;
         }
 
         /**
+         * 返回的是与 当前 name 有关的信息。
          * Creates a module mapping that includes plugin prefix, module
          * name, and path. If parentModuleMap is provided it will
          * also normalize the name via require.normalize()
@@ -434,6 +435,7 @@ var requirejs, require, define;
                 prefix = null,
                 parentName = parentModuleMap ? parentModuleMap.name : null,
                 originalName = name,
+                /** 代表了是 define 方法还是 require 方法 */
                 isDefine = true,
                 normalizedName = '';
 
@@ -514,6 +516,7 @@ var requirejs, require, define;
             };
         }
 
+        /** 一个以 depMap 为参数的 new Module 的实例 */
         function getModule(depMap) {
             var id = depMap.id,
                 mod = getOwn(registry, id);
@@ -683,6 +686,7 @@ var requirejs, require, define;
                     return;
                 }
 
+                // 如果是 require 方法
                 if (!map.isDefine) {
                     reqCalls.push(mod);
                 }
@@ -1458,11 +1462,17 @@ var requirejs, require, define;
                 return fn;
             },
 
+            /**
+             * require核心代码 localRequire
+             * @param {*} relMap 
+             * @param {*} options 
+             * @returns 
+             */
             makeRequire: function (relMap, options) {
                 options = options || {};
 
                 /**
-                 * 核心 require 方法
+                 * require核心代码
                  * @param {*} deps 
                  * @param {*} callback 
                  * @param {*} errback 
@@ -1473,39 +1483,6 @@ var requirejs, require, define;
 
                     if (options.enableBuildCallback && callback && isFunction(callback)) {
                         callback.__requireJsBuild = true;
-                    }
-
-                    // deps 是 string
-                    if (typeof deps === 'string') {
-                        if (isFunction(callback)) {
-                            // Invalid call
-                            return onError(makeError('requireargs', 'Invalid require call'), errback);
-                        }
-                        //If require|exports|module are requested, get the
-                        //value for them from the special handlers. Caveat:
-                        //this only works while module is being defined.
-                        if (relMap && hasProp(handlers, deps)) {
-                            return handlers[deps](registry[relMap.id]);
-                        }
-
-                        //Synchronous access to one module. If require.get is
-                        //available (as in the Node adapter), prefer that.
-                        if (req.get) {
-                            return req.get(context, deps, relMap, localRequire);
-                        }
-
-                        //Normalize module name, if it contains . or ..
-                        map = makeModuleMap(deps, relMap, false, true);
-                        id = map.id;
-
-                        if (!hasProp(defined, id)) {
-                            return onError(makeError('notloaded', 'Module name "' +
-                                        id +
-                                        '" has not been loaded yet for context: ' +
-                                        contextName +
-                                        (relMap ? '' : '. Use require([])')));
-                        }
-                        return defined[id];
                     }
 
                     //Grab defines waiting in the global queue.
@@ -1818,7 +1795,7 @@ var requirejs, require, define;
     }
 
     /**
-     * 核心代码
+     * require核心代码
      * @param {*} deps 依赖数组
      * @param {*} callback 依赖回调
      * @param {*} errback 
@@ -2114,6 +2091,9 @@ var requirejs, require, define;
     }
 
     /**
+     * define核心代码
+     * 他只是去表现了依赖关系，但是并没有执行代码。
+     * 真正的代码执行还是在 require 方法里面
      * The function that handles definitions of modules. Differs from
      * require() in that a string for the module should be the first argument,
      * and the function to execute after dependencies are loaded should
